@@ -127,8 +127,7 @@ describe('deletion of a blog', () => {
       const updateBlog = {
         title: 'Trying to Update Blog',
         author: 'JB again',
-        url: 'www.update.com',
-        likes: 5
+        url: 'www.update.com'
       }
 
       await api
@@ -144,7 +143,7 @@ describe('deletion of a blog', () => {
       )
   
       const title = blogsAtEnd.map(r => r.title)
-  
+        
       expect(title).toContain(updateBlog.title)
     })
   })

@@ -52,7 +52,7 @@ blogsRouter.post('/', async (request, response ) => {
 
 //update a particular resource
 
-    blogsRouter.put('/:id', (request, response, next) => {
+    blogsRouter.put('/:id', async (request, response, next) => {
         const body = request.body
 
         const blog = {
@@ -62,11 +62,8 @@ blogsRouter.post('/', async (request, response ) => {
             likes: (body.hasOwnProperty('likes') ? body.likes : 0)
         }
 
-        Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
-        .then(updatedBlog => {
-            response.json(updatedBlog)
-        })
-        .catch(error => next(error))
+        const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
+        response.json(updatedBlog)
     })
 
 
