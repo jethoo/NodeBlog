@@ -8,14 +8,21 @@ blogsRouter.get('/', async (request, response) => {
 })
 
 //create new blog
-blogsRouter.post('/', (request, response, next) => {
-    const blog = new Blog(request.body)
-
-    blog
-       .save()
-       .then(result => {
-           response.status(201).json(result)
-       })
+blogsRouter.post('/', async (request, response ) => {
+    const body = request.body
+    if(body.hasOwnProperty('title') && body.hasOwnProperty('url')){
+        const blog = new Blog({
+            title: body.title,
+            author: body.author,
+            url: body.url,
+            likes: (body.hasOwnProperty('likes') ? body.likes : 0)
+        })
+        
+        const savedBlog = await blog.save()
+        response.json(savedBlog)
+    } else {
+        response.status(400).end()
+    }
 })
 
 
@@ -36,23 +43,23 @@ blogsRouter.post('/', (request, response, next) => {
 
 
 //deleting a particular resource
-/*
-    blogsRouter.delete('/:id', (request, response, next) => {
-        Blog.findByIdAndRemove(request.params.id)
-            .then(() => {
-                response.status(204).end()
-            })
-            .catch(error => next(error))
+
+    blogsRouter.delete('/:id', async (request, response) => {
+        await Blog.findByIdAndRemove(request.params.id)
+        response.status(204).end()
     })
-*/
+
 
 //update a particular resource
-/*
+
     blogsRouter.put('/:id', (request, response, next) => {
         const body = request.body
 
         const blog = {
-            
+            title: body.title,
+            author: body.author,
+            url: body.url,
+            likes: (body.hasOwnProperty('likes') ? body.likes : 0)
         }
 
         Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
@@ -61,6 +68,6 @@ blogsRouter.post('/', (request, response, next) => {
         })
         .catch(error => next(error))
     })
-*/
+
 
 module.exports = blogsRouter
