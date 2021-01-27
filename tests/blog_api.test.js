@@ -5,13 +5,27 @@ const api = supertest(app)
 const Blog = require('../models/blog')
 const helper = require('./test_helper')
 
+let token
+let usersAtStart
 //this runs first
 beforeEach(async () => {
     await Blog.deleteMany({})
-
+    usersAtStart = await helper.usersInDb()
+    //adding user property to the blog, so that blog can be associated with the right user
+    let modifyInitialBlog = helper.initialBlogs.map(blog => blog.user = usersAtStart[1].id)
     const blogs = helper.initialBlogs
         .map(blog => new Blog(blog))
     const promiseArray = blogs.map(blog => blog.save())
+    const userIs = {
+      username: 'Jiban',
+      password: 'Jiban'
+    }
+    const tokenResponse = await api
+              .post('/api/login')
+              .send(userIs)
+              .expect(200)
+              .expect('Content-Type', /application\/json/)
+    token = tokenResponse.body.token
     await Promise.all(promiseArray)
 })
 
@@ -38,11 +52,13 @@ test('Valid blog can be added', async () => {
         title: 'Another Test using Supertest',
         author: 'JB',
         url: 'www.test.com',
-        likes: 2
+        likes: 2,
+        user: usersAtStart[1].id
     }
 
     await api
         .post('/api/blogs')
+        .set({ Authorization: `bearer ${token}`})
         .send(newBlog)
         .expect(200)
         .expect('Content-Type', /application\/json/)
@@ -56,6 +72,27 @@ test('Valid blog can be added', async () => {
     )
 })
 
+//creating blog without token
+test('blog sent without token cannot be added', async () => {
+
+  const newBlog = {
+      title: 'Another Test using Supertest',
+      author: 'JB',
+      url: 'www.test.com',
+      likes: 2,
+      user: usersAtStart[1].id
+  }
+
+  await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(401)
+  
+  const blogsAtEnd = await helper.blogsInDb()
+  expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
+
+})
+
 test('Blog without likes', async () => {
     const newBlog = {
         title: 'How to improve Teeth Health',
@@ -65,6 +102,7 @@ test('Blog without likes', async () => {
 
     await api
         .post('/api/blogs')
+        .set({ Authorization: `bearer ${token}`})
         .send(newBlog)
         .expect(200)
         .expect('Content-Type', /application\/json/)
@@ -81,6 +119,7 @@ test('Blog missing Title and Url Properties', async () => {
 
     await api
         .post('/api/blogs')
+        .set({ Authorization: `bearer ${token}`})
         .send(newBlog)
         .expect(400)
     
@@ -90,36 +129,10 @@ test('Blog missing Title and Url Properties', async () => {
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
 })
 
-
-
-//testcase for deletion of blog
-describe('deletion of a blog', () => {
-    test('succeeds with status code 204 if id is valid', async () => {
-      const blogsAtStart = await helper.blogsInDb()
-      console.log('blogsAtStart', blogsAtStart)
-      const blogToDelete = blogsAtStart[0]
-        
-      await api
-        .delete(`/api/blogs/${blogToDelete.id}`)
-        .expect(204)
-    
-      const blogsAtEnd = await helper.blogsInDb()
-      console.log('blogsAtEnd after deletion', blogsAtEnd)
-      expect(blogsAtEnd).toHaveLength(
-        helper.initialBlogs.length - 1
-      )
-  
-      const title = blogsAtEnd.map(r => r.title)
-  
-      expect(title).not.toContain(blogToDelete.title)
-    })
-  })
-
-  //testcase for updating of blog
-  describe('Updating of a blog', () => {
+//testcase for updating of blog
+  describe('Updating & deleting of a blog', () => {
     test('Updates the blog successfully', async () => {
       const blogsAtStart = await helper.blogsInDb()
-      console.log('blogsAtStart', blogsAtStart)
       const blogToUpdate = blogsAtStart[0]
     
       const updateBlog = {
@@ -135,7 +148,6 @@ describe('deletion of a blog', () => {
         .expect('Content-Type', /application\/json/)
     
       const blogsAtEnd = await helper.blogsInDb()
-      console.log('blogsAtEnd after updating', blogsAtEnd)
       expect(blogsAtEnd).toHaveLength(
         helper.initialBlogs.length
       )
@@ -144,8 +156,26 @@ describe('deletion of a blog', () => {
         
       expect(title).toContain(updateBlog.title)
     })
-  })
+
+    test('succeeds with status code 204 if id is valid', async () => {
+      const blogsAtStart = await helper.blogsInDb()
+      const blogToDelete = blogsAtStart[0]
+      await api
+        .delete(`/api/blogs/${blogToDelete.id}`)
+        .set({ Authorization: `bearer ${token}`})
+        .expect(204)
+    
+      const blogsAtEnd = await helper.blogsInDb()
+      expect(blogsAtEnd).toHaveLength(
+        helper.initialBlogs.length - 1
+      )
   
+      const title = blogsAtEnd.map(r => r.title)
+  
+      expect(title).not.toContain(blogToDelete.title)
+    })
+  })
+
 
   afterAll(() => {
     mongoose.connection.close()
