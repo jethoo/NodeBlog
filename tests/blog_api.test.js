@@ -90,9 +90,7 @@ test('Blog missing Title and Url Properties', async () => {
     expect(blogsAtEnd).toHaveLength(helper.initialBlogs.length)
 })
 
-afterAll(() => {
-    mongoose.connection.close()
-})
+
 
 //testcase for deletion of blog
 describe('deletion of a blog', () => {
@@ -148,3 +146,7 @@ describe('deletion of a blog', () => {
     })
   })
   
+
+  afterAll(() => {
+    mongoose.connection.close()
+})

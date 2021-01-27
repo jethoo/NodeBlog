@@ -1,0 +1,11 @@
+POST http://localhost:3003/api/blogs
+Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IkFrcyIsImlkIjoiNjAxMGE0ZDc2NTFjZWQ5NTM0MDRlYjg0IiwiaWF0IjoxNjExNzA4NTMzfQ.9geFxAA2Pckj2cihEybqX6MxHNGww1eam3zacNtiCVI
+
+{
+   "title": "Token in Middleware",
+   "author": "Part 4",
+   "url": "www.fullstackopen.com",
+   "likes": 1
+}
+
